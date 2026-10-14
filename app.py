@@ -33,6 +33,13 @@ def 各區空站比例(資料, 門檻值):
     return 表.sort_values("空站比例", ascending=False).reset_index()
 
 
+def 各時段可借車總數(資料):
+    """計算各時段的可借車總數。"""
+    表 = 資料.groupby("時段").agg(可借車總數=("available_rent_bikes", "sum")).reset_index()
+    表["時段"] = pd.Categorical(表["時段"], categories=時段們, ordered=True)
+    return 表.sort_values("時段")
+
+
 @solara.component
 def Page():
     solara.Title("YouBike 空站觀察")
@@ -72,6 +79,30 @@ def Page():
     solara.FigurePlotly(圖)
 
     solara.DataFrame(表)
+
+    各時段資料 = df
+    if 行政區.value != "全部行政區":
+        各時段資料 = 各時段資料[各時段資料["sarea"] == 行政區.value]
+
+    可借車表 = 各時段可借車總數(各時段資料)
+
+    if 行政區.value == "全部行政區":
+        可借車圖標題 = "全部行政區各時段可借車總數（只算營運中的站）"
+    else:
+        可借車圖標題 = f"{行政區.value}各時段可借車總數（只算營運中的站）"
+
+    可借車圖 = px.bar(
+        可借車表,
+        x="時段",
+        y="可借車總數",
+        title=可借車圖標題,
+        labels={"時段": "時段", "可借車總數": "可借車總數"},
+    )
+    可借車圖.update_layout(height=420)
+
+    solara.Markdown("## 各時段可借車總數")
+    solara.FigurePlotly(可借車圖)
+    solara.DataFrame(可借車表)
 
     solara.Markdown(
         "資料來源：臺北市 YouBike 2.0 即時資料（臺北市資料大平臺），"
