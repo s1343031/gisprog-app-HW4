@@ -5,6 +5,7 @@
 
 from pathlib import Path
 
+import leafmap.leafmap as leafmap
 import pandas as pd
 import plotly.express as px
 import solara
@@ -41,6 +42,52 @@ def 各時段可借車總數(資料):
     return 表.sort_values("時段")
 
 
+def 建立站點地圖(資料, 行政區名稱):
+    """用 Leafmap 在地圖上顯示目前篩選到的站點。"""
+    有座標資料 = 資料.dropna(subset=["latitude", "longitude"])
+    if 有座標資料.empty:
+        return None
+
+    中心緯度 = float(有座標資料["latitude"].mean())
+    中心經度 = float(有座標資料["longitude"].mean())
+    地圖 = leafmap.Map(
+        center=(中心緯度, 中心經度),
+        zoom=14 if 行政區名稱 != "全部行政區" else 12,
+        height="400px",
+        scroll_wheel_zoom=True,
+        draw_control=False,
+        measure_control=False,
+    )
+
+    特徵們 = []
+    for 站 in 有座標資料.itertuples():
+        特徵們.append(
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [float(站.longitude), float(站.latitude)],
+                },
+                "properties": {"站名": str(站.sna)},
+            }
+        )
+
+    地圖.add_geojson(
+        {"type": "FeatureCollection", "features": 特徵們},
+        layer_name="YouBike 站點",
+        point_style={
+            "radius": 6,
+            "color": "#ffffff",
+            "weight": 1,
+            "fillColor": "#2878B5",
+            "fillOpacity": 0.85,
+        },
+        info_mode=None,
+        zoom_to_layer=False,
+    )
+    return 地圖
+
+
 @solara.component
 def Page():
     solara.Title("YouBike 空站觀察")
@@ -55,6 +102,15 @@ def Page():
     當時 = df[df["時段"] == 時段.value]
     if 行政區.value != "全部行政區":
         當時 = 當時[當時["sarea"] == 行政區.value]
+
+    solara.Markdown("## YouBike 站點地圖")
+    地圖 = 建立站點地圖(當時, 行政區.value)
+    if 地圖 is None:
+        solara.Warning("目前篩選條件沒有可顯示的站點。")
+    else:
+        # isolation 避免地圖控制項的圖層順序蓋住頁面其他內容。
+        with solara.Div(style={"width": "100%", "isolation": "isolate"}):
+            solara.display(地圖)
 
     表 = 各區空站比例(當時, 門檻.value)
 
@@ -106,7 +162,10 @@ def Page():
     solara.DataFrame(可借車表)
 
     solara.Markdown(
-        "資料來源：臺北市 YouBike 2.0 即時資料（臺北市資料大平臺），"
+        "資料來源：[臺北市 YouBike 2.0 即時資料（臺北市資料大平臺）]"
+        "(https://tcgbusfs.blob.core.windows.net/dotapp/youbike/v2/youbike_immediate.json)，"
         "依政府資料開放授權條款第 1 版使用。"
         f"資料時間：{時段.value}。"
+        "\n\n底圖來源：OpenStreetMap contributors，"
+        "[底圖著作權與使用說明](https://www.openstreetmap.org/copyright)。"
     )
