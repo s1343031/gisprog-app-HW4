@@ -82,6 +82,7 @@ def 建立站點地圖(資料, 行政區名稱):
         draw_control=False,
         measure_control=False,
     )
+    地圖.layout.width = "100%"
 
     # 移除 Leafmap 預設圖層，再明確加入底圖，避免部署時依賴隱含預設值。
     地圖.layers = ()
@@ -156,11 +157,11 @@ def Page():
         "[底圖著作權與使用說明](https://www.openstreetmap.org/copyright)。"
     )
 
-    # 滑桿預設會撐滿整個頁寬，用 Column 限制最大寬度，比較好操作。
-    with solara.Column(style={"max-width": "480px"}):
+    # 篩選控制項採直向排列，手機窄螢幕也能使用完整寬度。
+    with solara.Column(style={"width": "100%", "max-width": "480px", "box-sizing": "border-box"}):
         solara.SliderInt("空站門檻：可借車 ≤", value=門檻, min=0, max=5)
         solara.Select("選擇行政區", value=行政區, values=行政區們)
-    solara.ToggleButtonsSingle(value=時段, values=時段們)
+        solara.Select("選擇時段", value=時段, values=時段們)
 
     當時 = df[df["時段"] == 時段.value]
     if 行政區.value != "全部行政區":
@@ -172,7 +173,7 @@ def Page():
         solara.Warning("目前篩選條件沒有可顯示的站點。")
     else:
         # isolation 避免地圖控制項的圖層順序蓋住頁面其他內容。
-        with solara.Div(style={"width": "100%", "isolation": "isolate"}):
+        with solara.Div(style={"width": "100%", "max-width": "100%", "min-width": "0", "isolation": "isolate"}):
             solara.display(地圖)
 
     表 = 各區空站比例(當時, 門檻.value)
@@ -192,13 +193,18 @@ def Page():
     )
     # 每區給 30 px 高度，行政區名稱才不會被 Plotly 自動隔行省略；換成區數更多的縣市也適用。
     圖.update_layout(
+        autosize=True,
         yaxis={"categoryorder": "total ascending"},
         xaxis_tickformat=".0%",
         height=150 + 30 * len(表),
+        margin={"l": 12, "r": 12, "t": 70, "b": 35},
+        title={"font": {"size": 16}},
     )
-    solara.FigurePlotly(圖)
+    with solara.Div(style={"width": "100%", "max-width": "100%", "min-width": "0"}):
+        solara.FigurePlotly(圖)
 
-    solara.DataFrame(表)
+    with solara.Div(style={"width": "100%", "max-width": "100%", "min-width": "0"}):
+        solara.DataFrame(表, scrollable=False)
 
     級距站數表 = 各級距站數(當時)
     if 行政區.value == "全部行政區":
@@ -216,9 +222,18 @@ def Page():
         category_orders={"可借車級距": list(分級顏色)},
         labels={"可借車級距": "可借車數（輛）", "站數": "站數"},
     )
-    級距圖.update_layout(height=340, showlegend=False)
+    級距圖.update_layout(
+        autosize=True,
+        height=340,
+        showlegend=False,
+        margin={"l": 12, "r": 12, "t": 70, "b": 45},
+        title={"font": {"size": 16}},
+        xaxis={"tickangle": 0, "tickfont": {"size": 10}},
+    )
 
     solara.Markdown("## 目前篩選站點的可借車級距")
-    solara.FigurePlotly(級距圖)
-    solara.DataFrame(級距站數表)
+    with solara.Div(style={"width": "100%", "max-width": "100%", "min-width": "0"}):
+        solara.FigurePlotly(級距圖)
+    with solara.Div(style={"width": "100%", "max-width": "100%", "min-width": "0"}):
+        solara.DataFrame(級距站數表, scrollable=False)
 
