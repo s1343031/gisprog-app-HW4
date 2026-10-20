@@ -45,13 +45,6 @@ def 各區空站比例(資料, 門檻值):
     return 表.sort_values("空站比例", ascending=False).reset_index()
 
 
-def 各時段可借車總數(資料):
-    """計算各時段的可借車總數。"""
-    表 = 資料.groupby("時段").agg(可借車總數=("available_rent_bikes", "sum")).reset_index()
-    表["時段"] = pd.Categorical(表["時段"], categories=時段們, ordered=True)
-    return 表.sort_values("時段")
-
-
 def 可借車分級(可借車數):
     """依站點可借車數回傳分級名稱。"""
     if 可借車數 == 0:
@@ -63,6 +56,14 @@ def 可借車分級(可借車數):
     if 可借車數 <= 10:
         return "6–10 輛"
     return "11 輛以上"
+
+
+def 各級距站數(資料):
+    """計算目前篩選資料中，各可借車級距的站數。"""
+    表 = 資料.copy()
+    表["可借車級距"] = 表["available_rent_bikes"].map(可借車分級)
+    表 = 表["可借車級距"].value_counts().reindex(分級顏色, fill_value=0)
+    return 表.rename_axis("可借車級距").rename("站數").reset_index()
 
 
 def 建立站點地圖(資料, 行政區名稱):
@@ -186,29 +187,27 @@ def Page():
 
     solara.DataFrame(表)
 
-    各時段資料 = df
-    if 行政區.value != "全部行政區":
-        各時段資料 = 各時段資料[各時段資料["sarea"] == 行政區.value]
-
-    可借車表 = 各時段可借車總數(各時段資料)
-
+    級距站數表 = 各級距站數(當時)
     if 行政區.value == "全部行政區":
-        可借車圖標題 = "全部行政區各時段可借車總數（只算營運中的站）"
+        級距圖標題 = f"{時段.value} 各可借車級距站數"
     else:
-        可借車圖標題 = f"{行政區.value}各時段可借車總數（只算營運中的站）"
+        級距圖標題 = f"{行政區.value}・{時段.value} 各可借車級距站數"
 
-    可借車圖 = px.bar(
-        可借車表,
-        x="時段",
-        y="可借車總數",
-        title=可借車圖標題,
-        labels={"時段": "時段", "可借車總數": "可借車總數"},
+    級距圖 = px.bar(
+        級距站數表,
+        x="可借車級距",
+        y="站數",
+        title=級距圖標題,
+        color="可借車級距",
+        color_discrete_map=分級顏色,
+        category_orders={"可借車級距": list(分級顏色)},
+        labels={"可借車級距": "可借車數（輛）", "站數": "站數"},
     )
-    可借車圖.update_layout(height=420)
+    級距圖.update_layout(height=340, showlegend=False)
 
-    solara.Markdown("## 臺北Youbike各時段可借車總數")
-    solara.FigurePlotly(可借車圖)
-    solara.DataFrame(可借車表)
+    solara.Markdown("## 目前篩選站點的可借車級距")
+    solara.FigurePlotly(級距圖)
+    solara.DataFrame(級距站數表)
 
     solara.Markdown(
         "資料來源：[臺北市 YouBike 2.0 即時資料（臺北市資料大平臺）]"
