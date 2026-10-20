@@ -146,6 +146,15 @@ def 建立站點地圖(資料, 行政區名稱):
 def Page():
     solara.Title("YouBike 空站觀察")
     solara.Markdown("# 臺北 YouBike 各區空站比例")
+    solara.Markdown(
+        "### 資料與地圖來源\n"
+        "- 資料來源：[臺北市 YouBike 2.0 即時資料（臺北市資料大平臺）]"
+        "(https://tcgbusfs.blob.core.windows.net/dotapp/youbike/v2/youbike_immediate.json)，"
+        "依政府資料開放授權條款第 1 版使用。\n"
+        f"- 資料時段：{時段.value}（目前選取時段）。\n"
+        "- 底圖來源：OpenStreetMap contributors；"
+        "[底圖著作權與使用說明](https://www.openstreetmap.org/copyright)。"
+    )
 
     # 滑桿預設會撐滿整個頁寬，用 Column 限制最大寬度，比較好操作。
     with solara.Column(style={"max-width": "480px"}):
@@ -213,11 +222,3 @@ def Page():
     solara.FigurePlotly(級距圖)
     solara.DataFrame(級距站數表)
 
-    solara.Markdown(
-        "資料來源：[臺北市 YouBike 2.0 即時資料（臺北市資料大平臺）]"
-        "(https://tcgbusfs.blob.core.windows.net/dotapp/youbike/v2/youbike_immediate.json)，"
-        "依政府資料開放授權條款第 1 版使用。"
-        f"資料時間：{時段.value}。"
-        "\n\n底圖來源：OpenStreetMap contributors，"
-        "[底圖著作權與使用說明](https://www.openstreetmap.org/copyright)。"
-    )
