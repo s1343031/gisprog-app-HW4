@@ -93,11 +93,11 @@ def 建立站點地圖(資料, 行政區名稱):
         )
     )
 
-    分級特徵 = {級距: [] for 級距 in 分級顏色}
+    站點特徵 = []
     for 站 in 有座標資料.itertuples():
         可借車數 = int(站.available_rent_bikes)
         級距 = 可借車分級(可借車數)
-        分級特徵[級距].append(
+        站點特徵.append(
             {
                 "type": "Feature",
                 "geometry": {
@@ -112,22 +112,26 @@ def 建立站點地圖(資料, 行政區名稱):
             }
         )
 
-    for 級距, 色彩 in 分級顏色.items():
-        if not 分級特徵[級距]:
-            continue
-        地圖.add_geojson(
-            {"type": "FeatureCollection", "features": 分級特徵[級距]},
-            layer_name=級距,
-            point_style={
-                "radius": 6,
-                "color": "#ffffff",
-                "weight": 1,
-                "fillColor": 色彩,
-                "fillOpacity": 0.9,
-            },
-            info_mode=None,
-            zoom_to_layer=False,
-        )
+    def 站點樣式(特徵):
+        """依每個站點的可借車級距設定圓點顏色。"""
+        級距 = 特徵["properties"]["可借車級距"]
+        return {
+            "radius": 6,
+            "color": "#ffffff",
+            "weight": 1,
+            "fillColor": 分級顏色[級距],
+            "fillOpacity": 0.9,
+        }
+
+    地圖.add_geojson(
+        {"type": "FeatureCollection", "features": 站點特徵},
+        layer_name="YouBike 站點",
+        style_callback=站點樣式,
+        point_style={"radius": 6},
+        info_mode="on_click",
+        fields=["站名", "可借車數"],
+        zoom_to_layer=False,
+    )
 
     地圖.add_legend(
         title="可借車數（輛）",
