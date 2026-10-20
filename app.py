@@ -77,7 +77,7 @@ def 建立站點地圖(資料, 行政區名稱):
     地圖 = leafmap.Map(
         center=(中心緯度, 中心經度),
         zoom=14 if 行政區名稱 != "全部行政區" else 12,
-        height="400px",
+        height="min(40vh, 360px)",
         scroll_wheel_zoom=True,
         draw_control=False,
         measure_control=False,
