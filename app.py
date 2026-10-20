@@ -168,7 +168,13 @@ def Page():
         當時 = 當時[當時["sarea"] == 行政區.value]
 
     solara.Markdown("## YouBike 站點地圖")
-    地圖 = 建立站點地圖(當時, 行政區.value)
+    # 門檻滑桿不影響站點位置與可借車級距，因此不列入地圖快取依賴。
+    # 行政區或時段改變時才建立新的地圖元件。
+    地圖 = solara.use_memo(
+        lambda: 建立站點地圖(當時, 行政區.value),
+        dependencies=[行政區.value, 時段.value],
+        debug_name="YouBike 站點地圖",
+    )
     if 地圖 is None:
         solara.Warning("目前篩選條件沒有可顯示的站點。")
     else:
