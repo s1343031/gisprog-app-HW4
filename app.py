@@ -5,6 +5,7 @@
 
 from pathlib import Path
 
+from ipyleaflet import TileLayer
 import leafmap.leafmap as leafmap
 import pandas as pd
 import plotly.express as px
@@ -26,6 +27,15 @@ df = df[df["act"] == "1"]  # 只看營運中的站
 時段 = solara.reactive(時段們[0])
 行政區 = solara.reactive("全部行政區")
 
+# 依可借車數分五級，使用適合色覺辨識的 Cividis 順序色帶。
+分級顏色 = {
+    "0 輛（空站）": "#00204C",
+    "1–2 輛": "#575D6D",
+    "3–5 輛": "#8C8981",
+    "6–10 輛": "#C8B978",
+    "11 輛以上": "#FFEA46",
+}
+
 
 def 各區空站比例(資料, 門檻值):
     """計算各區的站數、空站數與空站比例（可借車 <= 門檻值 算空站）。"""
@@ -42,8 +52,21 @@ def 各時段可借車總數(資料):
     return 表.sort_values("時段")
 
 
+def 可借車分級(可借車數):
+    """依站點可借車數回傳分級名稱。"""
+    if 可借車數 == 0:
+        return "0 輛（空站）"
+    if 可借車數 <= 2:
+        return "1–2 輛"
+    if 可借車數 <= 5:
+        return "3–5 輛"
+    if 可借車數 <= 10:
+        return "6–10 輛"
+    return "11 輛以上"
+
+
 def 建立站點地圖(資料, 行政區名稱):
-    """用 Leafmap 在地圖上顯示目前篩選到的站點。"""
+    """用 Leafmap 顯示分級站點，並明確加入 OpenStreetMap 底圖。"""
     有座標資料 = 資料.dropna(subset=["latitude", "longitude"])
     if 有座標資料.empty:
         return None
@@ -59,31 +82,57 @@ def 建立站點地圖(資料, 行政區名稱):
         measure_control=False,
     )
 
-    特徵們 = []
+    # 移除 Leafmap 預設圖層，再明確加入底圖，避免部署時依賴隱含預設值。
+    地圖.layers = ()
+    地圖.add_layer(
+        TileLayer(
+            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            attribution="© OpenStreetMap contributors",
+            name="OpenStreetMap",
+        )
+    )
+
+    分級特徵 = {級距: [] for 級距 in 分級顏色}
     for 站 in 有座標資料.itertuples():
-        特徵們.append(
+        可借車數 = int(站.available_rent_bikes)
+        級距 = 可借車分級(可借車數)
+        分級特徵[級距].append(
             {
                 "type": "Feature",
                 "geometry": {
                     "type": "Point",
                     "coordinates": [float(站.longitude), float(站.latitude)],
                 },
-                "properties": {"站名": str(站.sna)},
+                "properties": {
+                    "站名": str(站.sna),
+                    "可借車數": 可借車數,
+                    "可借車級距": 級距,
+                },
             }
         )
 
-    地圖.add_geojson(
-        {"type": "FeatureCollection", "features": 特徵們},
-        layer_name="YouBike 站點",
-        point_style={
-            "radius": 6,
-            "color": "#ffffff",
-            "weight": 1,
-            "fillColor": "#2878B5",
-            "fillOpacity": 0.85,
-        },
-        info_mode=None,
-        zoom_to_layer=False,
+    for 級距, 色彩 in 分級顏色.items():
+        if not 分級特徵[級距]:
+            continue
+        地圖.add_geojson(
+            {"type": "FeatureCollection", "features": 分級特徵[級距]},
+            layer_name=級距,
+            point_style={
+                "radius": 6,
+                "color": "#ffffff",
+                "weight": 1,
+                "fillColor": 色彩,
+                "fillOpacity": 0.9,
+            },
+            info_mode=None,
+            zoom_to_layer=False,
+        )
+
+    地圖.add_legend(
+        title="可借車數（輛）",
+        legend_dict=分級顏色,
+        position="bottomright",
+        shape_type="circle",
     )
     return 地圖
 
