@@ -160,7 +160,7 @@ def Page():
     # 篩選控制項採直向排列，手機窄螢幕也能使用完整寬度。
     with solara.Column(
         style={
-            "width": "85%",
+            "width": "75%",
             "max-width": "480px",
             "margin": "0 auto",
             "box-sizing": "border-box",
@@ -188,10 +188,10 @@ def Page():
         # isolation 避免地圖控制項的圖層順序蓋住頁面其他內容。
         with solara.Div(
             style={
-                "width": "85%",
+                "width": "75%",
                 "max-width": "100%",
                 "min-width": "0",
-                "margin": "0 auto",
+                "margin": "0",
                 "isolation": "isolate",
             }
         ):
@@ -222,12 +222,12 @@ def Page():
         title={"font": {"size": 16}},
     )
     with solara.Div(
-        style={"width": "85%", "max-width": "100%", "min-width": "0", "margin": "0 auto"}
+        style={"width": "75%", "max-width": "100%", "min-width": "0", "margin": "0"}
     ):
         solara.FigurePlotly(圖)
 
     with solara.Div(
-        style={"width": "85%", "max-width": "100%", "min-width": "0", "margin": "0 auto"}
+        style={"width": "75%", "max-width": "100%", "min-width": "0", "margin": "0"}
     ):
         solara.DataFrame(表, scrollable=False)
 
@@ -258,11 +258,11 @@ def Page():
 
     solara.Markdown("## 目前篩選站點的可借車級距")
     with solara.Div(
-        style={"width": "85%", "max-width": "100%", "min-width": "0", "margin": "0 auto"}
+        style={"width": "75%", "max-width": "100%", "min-width": "0", "margin": "0"}
     ):
         solara.FigurePlotly(級距圖)
     with solara.Div(
-        style={"width": "85%", "max-width": "100%", "min-width": "0", "margin": "0 auto"}
+        style={"width": "75%", "max-width": "100%", "min-width": "0", "margin": "0"}
     ):
         solara.DataFrame(級距站數表, scrollable=False)
 
