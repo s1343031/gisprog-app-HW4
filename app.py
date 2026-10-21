@@ -158,7 +158,14 @@ def Page():
     )
 
     # 篩選控制項採直向排列，手機窄螢幕也能使用完整寬度。
-    with solara.Column(style={"width": "100%", "max-width": "480px", "box-sizing": "border-box"}):
+    with solara.Column(
+        style={
+            "width": "92%",
+            "max-width": "480px",
+            "margin": "0 auto",
+            "box-sizing": "border-box",
+        }
+    ):
         solara.SliderInt("空站門檻：可借車 ≤", value=門檻, min=0, max=5)
         solara.Select("選擇行政區", value=行政區, values=行政區們)
         solara.Select("選擇時段", value=時段, values=時段們)
@@ -179,7 +186,15 @@ def Page():
         solara.Warning("目前篩選條件沒有可顯示的站點。")
     else:
         # isolation 避免地圖控制項的圖層順序蓋住頁面其他內容。
-        with solara.Div(style={"width": "100%", "max-width": "100%", "min-width": "0", "isolation": "isolate"}):
+        with solara.Div(
+            style={
+                "width": "92%",
+                "max-width": "100%",
+                "min-width": "0",
+                "margin": "0 auto",
+                "isolation": "isolate",
+            }
+        ):
             solara.display(地圖)
 
     表 = 各區空站比例(當時, 門檻.value)
@@ -206,10 +221,14 @@ def Page():
         margin={"l": 12, "r": 12, "t": 70, "b": 35},
         title={"font": {"size": 16}},
     )
-    with solara.Div(style={"width": "100%", "max-width": "100%", "min-width": "0"}):
+    with solara.Div(
+        style={"width": "92%", "max-width": "100%", "min-width": "0", "margin": "0 auto"}
+    ):
         solara.FigurePlotly(圖)
 
-    with solara.Div(style={"width": "100%", "max-width": "100%", "min-width": "0"}):
+    with solara.Div(
+        style={"width": "92%", "max-width": "100%", "min-width": "0", "margin": "0 auto"}
+    ):
         solara.DataFrame(表, scrollable=False)
 
     級距站數表 = 各級距站數(當時)
@@ -238,8 +257,12 @@ def Page():
     )
 
     solara.Markdown("## 目前篩選站點的可借車級距")
-    with solara.Div(style={"width": "100%", "max-width": "100%", "min-width": "0"}):
+    with solara.Div(
+        style={"width": "92%", "max-width": "100%", "min-width": "0", "margin": "0 auto"}
+    ):
         solara.FigurePlotly(級距圖)
-    with solara.Div(style={"width": "100%", "max-width": "100%", "min-width": "0"}):
+    with solara.Div(
+        style={"width": "92%", "max-width": "100%", "min-width": "0", "margin": "0 auto"}
+    ):
         solara.DataFrame(級距站數表, scrollable=False)
 
